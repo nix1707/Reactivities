@@ -10,7 +10,7 @@ const ActivityFilters = () => {
                 <Menu.Item content="I'm going" />
                 <Menu.Item content="I'm hosting" />
             </Menu>
-            <Header />
+            <Header icon="calendar" attached color="teal" content="Select date"/>
             <Calendar />
         </>
     )

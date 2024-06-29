@@ -4,7 +4,7 @@ interface Props{
     errors: string[];
 }
 
-const ValidationError = ({errors} : Props) => {
+const ValidationErrors = ({errors} : Props) => {
     return(
         <Message error>
             {errors && (
@@ -18,4 +18,4 @@ const ValidationError = ({errors} : Props) => {
     )
 }
 
-export default ValidationError
+export default ValidationErrors
