@@ -9,30 +9,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
+[AllowAnonymous]
 [ApiController, Route("api/[controller]")]
 public class AccountController(UserManager<AppUser> userManager,
-    TokenService tokenService) : ControllerBase
+    TokenService tokenService, SignInManager<AppUser> signInManager) : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager = userManager;
+    private readonly SignInManager<AppUser> _signInManager = signInManager;
     private readonly TokenService _tokenService = tokenService;
 
-    [HttpPost("login"), AllowAnonymous]
+    [HttpPost("login")]
     public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
     {
-        var user = await _userManager.FindByEmailAsync(loginDto.Email);
+        var user = await _userManager.Users
+            .Include(p => p.Photos)
+            .FirstOrDefaultAsync(x => x.Email == loginDto.Email);
 
         if (user is null) 
             return Unauthorized();
 
-        var result = await _userManager.CheckPasswordAsync(user, loginDto.Password);
+        var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
 
-        if (result)
+        if (result.Succeeded)
             return CreateUserObject(user);
         
         return Unauthorized();
     }
     
-    [HttpPost("register"), AllowAnonymous]
+    [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
     {
         if (await _userManager.Users.AnyAsync(u => u.UserName == registerDto.Username))
@@ -64,10 +68,12 @@ public class AccountController(UserManager<AppUser> userManager,
         return BadRequest(result.Errors);
     }
 
-    [HttpGet]
+    [HttpGet, Authorize]
     public async Task<ActionResult<UserDto>> GetCurrentUser()
     {
-        var user = await _userManager.FindByEmailAsync(User.FindFirstValue(ClaimTypes.Email));
+        var user = await _userManager.Users
+            .Include(p => p.Photos)
+            .FirstOrDefaultAsync(x => x.Email == User.FindFirstValue(ClaimTypes.Email));
 
         return CreateUserObject(user);
     }
@@ -77,7 +83,7 @@ public class AccountController(UserManager<AppUser> userManager,
         return new UserDto
         {
             DisplayName = user.DisplayName,
-            Image = null,
+            Image = user?.Photos?.FirstOrDefault(x => x.IsMain)?.Url,
             Token = _tokenService.CreateToken(user),
             Username = user.UserName
         };
