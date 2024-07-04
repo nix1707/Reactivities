@@ -5,6 +5,13 @@ export interface Profile {
     displayName: string;
     image?: string;
     bio?: string;
+    photos?: Photo[];
+}
+
+export interface Photo {
+    id: string;
+    url: string;
+    isMain: boolean;
 }
 
 export class Profile implements Profile {
